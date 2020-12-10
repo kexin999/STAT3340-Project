@@ -1,0 +1,218 @@
+---
+title: "3340-Project"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+1. Matrix Scatter Plot
+```{r}
+Fish <- read.csv("Fish.csv", header=TRUE)
+names(Fish) <- c("Species","Weight","Length1","Length2","Length3","Height","Width")
+summary(Fish)
+Fish
+```
+
+```{r}
+pairs(~Weight + Length1 + Length2 + Length3 + Width + Height,data=Fish,main="Analyzing for fishing")
+```
+According to the diagram above, we can see that there is linear relationship between the data of Vertical Length and Diagonal Length, Vertical Length and Cross Length, Diagonal Length and Cross Length, while there is no obvious relationship between the predictors and the response variable.
+
+
+```{r}
+library(ggplot2)
+# Species and Weight
+color1 = c('#fee5d9', '#fcbba1', '#fc9272', '#fb6a4a', '#ef3b2c', '#cb181d', '#99000d')
+ggplot(Fish, aes(Species, Weight, fill = Species)) + geom_boxplot() + ggtitle("Species and Weight") + ylab("Weight (g)") + theme_bw() + scale_fill_manual(values = color1)
+
+# Species and Vertical Length
+color2 = c('#feedde', '#fdd0a2', '#fdae6b', '#fd8d3c', '#f16913', '#d94801', '#8c2d04')
+ggplot(Fish, aes(Species, Length1, fill = Species)) + geom_boxplot() + ggtitle("Species and Vertical Length") + ylab("Vertical Length (cm)") + theme_bw() + scale_fill_manual(values = color2)
+
+# Species and Diagonal Length
+color3 = c('#edf8e9', '#c7e9c0', '#a1d99b', '#74c476', '#41ab5d', '#238b45', '#005a32')
+ggplot(Fish, aes(Species, Length2, fill = Species)) + geom_boxplot() + ggtitle("Species and Diagonal Length") + ylab("Diagonal Length (cm)") + theme_bw() + scale_fill_manual(values = color3)
+
+# Species and Cross Length
+color4 = c('#eff3ff', '#c6dbef', '#9ecae1', '#6baed6', '#4292c6', '#2171b5', '#084594')
+ggplot(Fish, aes(Species, Length3, fill = Species)) + geom_boxplot() + ggtitle("Species and Cross Length") + ylab("Cross Length (cm)") + theme_bw() + scale_fill_manual(values = color4)
+
+# Species and Height
+color5 = c('#f2f0f7', '#dadaeb', '#bcbddc', '#9e9ac8', '#807dba', '#6a51a3', '#4a1486')
+ggplot(Fish, aes(Species, Height, fill = Species)) + geom_boxplot() + ggtitle("Species and Height") + ylab("Height (cm)") + theme_bw() + scale_fill_manual(values = color5)
+
+# Species and Width
+color6 = c('#f7f7f7', '#d9d9d9', '#bdbdbd', '#969696', '#737373', '#525252', '#252525')
+ggplot(Fish, aes(Species, Width, fill = Species)) + geom_boxplot() + ggtitle("Species and Width") + ylab("Width (cm)") + theme_bw() + scale_fill_manual(values = color6)
+```
+
+
+2. Correlation Coefficient Matrix
+```{r}
+mydata<-Fish[, c(2,3,4,5,6,7)]
+cor(mydata)
+```
+Correlation coefficient
+
+Corr between Length1 and Length2 is 0.9995173, which is very close to 1, it means that there is strong correlation between the data of Vertical Length and Diagonal Length.
+
+Corr between Length1 and Height is 0.6253779, which is the least correlation coefficient, and the correlation between the data of Vertical Length and Height is relatively weaker than others but the correlation is still significant for 0.6253779 >> 0.
+
+3. Additional Data Point
+```{r}
+row<- c("Smelt", 19.8, 12.0, 13.5, 14.4, 2.35, 1.401)
+Fish<-rbind(Fish,row)
+Fish
+```
+
+The additional data point we want to add is "Smelt 19.8 12.0 13.5 14.4 2.35 1.401". From the box plots above, we can find the maximum, minimum, average and interquartile range of each variables against species. It is obvious that the variables of perch has the largest interquartile range among the fishes, while smelt is supposed to be the smallest fish for its interquartile range is the smallest and it has the shortest length in all of the plots.
+Therefore, we decide to add an additional data point to smelt. Each of the numbers we come up with are in the interquartile range, which makes them relatively normal points.
+ 
+ 
+Section 4: Method
+
+Part 1: Select Model 
+1) Analyze data and find all possible models
+```{r}
+# If you don't have "olsrr" package, you could install it with followed step.
+# install package "olsrr"
+library(olsrr)
+```
+
+```{r}
+# Import data
+Fish <- read.csv("Fish.csv", header=TRUE)
+names(Fish) <- c("Species","Weight","Length1","Length2","Length3","Height","Width")
+Fish
+
+# Since the dependent variable of the 41st data point is 0, it cannot be transferred with "log". So, it is deleted.
+# （Note: The additional point has to be added by hand to avoid some errors!
+#   Additional point: "Smelt 19.8 12.0 13.5 14.4 2.35 1.401"
+ 
+Fish<-Fish[-41,]
+Fish  
+```
+
+```{r}
+Fish$Weight = log(Fish$Weight)
+Fish$Length1 = log(Fish$Length1)
+Fish$Length2 = log(Fish$Length2)
+Fish$Length3 = log(Fish$Length3)
+Fish$Width = log(Fish$Width)
+Fish$Height = log(Fish$Height) 
+Fish
+model <- lm(Weight ~ Length1 + Length2 + Length3 + Width + Height,data = Fish)
+# Get all possible models & Small  Mallow's Cp are desirable
+k <- ols_step_all_possible(model)
+print(k)
+plot(k)
+``` 
+
+```{r}
+summary(model)
+plot(model)
+# Scatter plot matrices with colors
+pairs(~ Length1 + Length2 + Length3 + Width + Height,data=Fish,main="Analyzing for fishing", pch=21, bg=c("red","green","yellow","pink","black","blue","grey")[unclass(Fish$Species)]) 
+
+mydata<-Fish[, c(2,3,4,5,6,7)]
+cor(mydata)
+```   
+
+
+```{r}
+model <- lm(Weight ~ Length1 + Length2 + Length3 + Width + Height,data = Fish)
+# Get all possible models & Small  Mallow's Cp are desirable
+k <- ols_step_all_possible(model)
+print(k)
+plot(k)
+summary(model)
+```
+[1] R-Square: R-Square expresses the portion that independent variables can explain the dependent variable. From the R-Square graph, we could discover that as the number of independent variables increases, the value of R-Square increases. In some ways, more independent variables, more portion of the dependent variable can be explained. 
+  
+[2] Cp: Small Cp are desirable. So, model 16, 17, 26, 27, 31 are desirable. 
+  model 16: Weight = Length2 + Width + Height
+  model 17: Weight = 	Length1 + Width + Height
+  model 26: Weight = Length2 + Length3 + Width +Height
+  model 27: Weight = Length1 + Length2 + Width + Height
+  model 31: Weight = Length1 + Length2 + Length3 + Width + Height
+  
+[3] Adj. R-Square: Since Adjusted R-Square could determine there are any unmeaningful independent variables added. Since there is no difference between R-Square and Adj. R-Square from these graphs, there is no useless independent variables in this model; the value of Adj. R-Square is not affected by the number of independent variables.
+  
+[4] AIC: The equation of AIC is AIC = −2 ln (L) + 2 p, L is likelihood function, p is num of parameters. When the complexity of the model increases (p increases), the likelihood function(L) increases so that AIC decreases, but when p is too big, L increases slowly so that cause AIC to increase. The complexity of the model may cause overfitting, so our purpose is to choose the model with a small AIC, which means the model is more accurate. So, choosing the model with a small AIC not only improves the model fit but also introduces a penalty term to make the model parameters(p) as few as possible, which helps reduce the possibility of overfitting. 
+Therefore, the model 16, 26, 31 look good.
+  model 16: Weight = Length2 + Width + Height
+  model 26: Weight = Length2 + Length3 + Width +Height
+  model 31: Weight = Length1 + Length2 + Length3 + Width + Height
+
+
+
+2) Best subset of regression: (Determine how many independent variables will be appropriate
+
+```{r}
+# Select best models from last steps
+bestsub <- ols_step_best_subset(model)
+print(bestsub)
+plot(bestsub)
+summary(bestsub)
+```
+The function ols_step_best_subset(model) helps us select some models. Also, from the summary result, we could discover that model 3,4,5 has smaller AIC and C(p), which means these models more suitable. Although those graphs illustrate that two independent variables should be better, based on these aspects, model 3 is selected. Because model 3 has the lowest AIC and C(p), it has 3 independent variables.
+  model 3: Weight = Length2 + Width + Height    
+  model 4: Weight = Length2 + Length3 + Width + Height  
+  model 5: Weight = Length1 + Length2 + Length3 + Width + Height  
+ 
+
+3) Backward Elimination: (Note*: Assuming Alpha_out = 0.001)
+Reason for choose Backward Elimination: Forward Selection is not enough accurate, Stepwise Regression is too complex. Generally, Stepwise Regression's result is same with Backward Elimination.
+
+Step 1: Assuming that the model starts with all variables included, that $$y = \beta_0 + \beta_1 x_1 + \beta_2 x_2 + \beta_3 x_3 + \beta_4 x_4 + \beta_5 x_5$$
+
+```{r}   
+# Backward Elimination： 
+summary(lm(Weight ~ Length1 + Length2 + Length3 + Width + Height,data = Fish))
+```
+Among the outputs, Length1 has the largest p value (0.73827  > 0.001), so remove Length1.
+
+Step 2: Continue backward elimination with $$y = \beta_0 + \beta_2 x_2 + \beta_3 x_3 + \beta_4 x_4 + \beta_5 x_5$$
+```{r} 
+summary(lm(Weight ~ Length2 + Length3 + Width + Height,data = Fish))
+```
+Among the outputs, Length3 has the largest p value (0.149  > 0.001), so remove Length3
+
+Step 3: Continue backward elimination with $$y = \beta_0 + \beta_2 x_2 + \beta_4 x_4 + \beta_5 x_5$$
+```{r} 
+summary(lm(Weight ~ Length2 + Width + Height,data = Fish))
+```
+Among the outputs, There is no independent variable's p values less than 0.001.
+
+In summary outputs, both of the p values are smaller than 0.001, so Length2, Width and Height can remain in model.
+
+So far, backward elimination ends, and we get the final model: $$y = \beta_0 + \beta_2 x_2+ \beta_4 x_4 + \beta_5 x_5$$
+
+
+Part 2: Adjust Model
+
+1) Gauss-Markov Assumption:
+```{r} 
+model <-lm(Weight ~ Length2 + Width + Height,data = Fish)
+plot(model)
+``` 
+[1] Residuals vs Fitted: We could discover that not all of the residuals locate beside 0. So, the distribution of residuals is not relatively uniform. 
+
+[2] Normal Q-Q: From the trend of distribution, we could discover that not all of the points follow the normal distribution, it needs adjustment.
+
+[3] Scale-Location: Since the variances of each residuals are not equal, they are spread; which means this model needs adjustment.
+
+[4] Residuals vs Leverage: There are some outliers in it.
+
+2) VIF:
+```{r}
+# If you don't have these package, you could install them with followed steps.
+# install.packages("MPV")
+# install.packages("faraway")
+library(MPV)
+library(faraway)
+M <- lm(Weight ~ Length2 + Width + Height, data = Fish)
+vif(M)
+```
+Since the VIF of Width is 14.298660, which is large than 10, the associated regression coefficients are estimated poorly because of the multicollinearity. However, this project is used to find the best model which is good fit. So, the value of VIF is tolerable. 
+
